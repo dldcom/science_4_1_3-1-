@@ -570,8 +570,16 @@ document.addEventListener('DOMContentLoaded', () => {
         avgWaterVx /= waterCount;
         avgWaterVy /= waterCount;
         
-        // Push fish along with water (increased force to prevent getting stuck)
-        fish.vx += avgWaterVx * 0.25;
+        // Push fish along with water
+        // If water flows backwards (splash/bounce), fish resists it (90% resistance)
+        let pushX = avgWaterVx;
+        if (pushX < 0) {
+          pushX *= 0.1;
+        }
+        fish.vx += pushX * 0.25;
+        
+        // Natural forward swimming instinct while in water
+        fish.vx += 0.2;
         // Float upwards slightly if deep in water
         if (fish.y > ty - 25) fish.vy -= 1.0;
         
