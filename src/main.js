@@ -293,11 +293,11 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Springs spawn fewer particles per frame, but constantly
     for (let s of springs) {
-      for(let i=0; i<5; i++) { // Increased water volume
+      for(let i=0; i<5; i++) { // Keep water volume, but reduce speed
         particles.push({
           x: s.x + (Math.random() * 10 - 5),
           y: s.y + (Math.random() * 10 - 5),
-          vx: 4.0 + (Math.random() * 2.0), // Very powerful and fast flow to the right
+          vx: 1.5 + (Math.random() * 1.5), // Gentle, natural flow to the right
           vy: 2 + (Math.random() * 1),
           soilLoad: 0,
           life: 2500, // Spring water lasts very long so it can reach the end
@@ -525,57 +525,27 @@ document.addEventListener('DOMContentLoaded', () => {
         fish.vy = 0;
       }
       
-      // Check water depth and separate water sources
+      // Check water depth
       let waterCount = 0;
-      let springVx = 0, springCount = 0;
-      let bottleVx = 0, bottleCount = 0;
-      
       for (let p of particles) {
         let dx = p.x - fish.x;
         let dy = p.y - fish.y;
         if (dx*dx + dy*dy < 1600) { // radius 40
           waterCount++;
-          if (p.source === 'bottle') {
-            bottleVx += p.vx;
-            bottleCount++;
-          } else {
-            springVx += p.vx;
-            springCount++;
-          }
         }
       }
       
       if (waterCount > 0) { // Require only 1 water particle to swim
-        // In water: heal and get pushed by flow
-        fish.hp = Math.min(fish.maxHp, fish.hp + 0.5); // Heal faster
+        // In water: heal
+        fish.hp = Math.min(fish.maxHp, fish.hp + 0.5); 
         
-        let avgSpringVx = springCount > 0 ? springVx / springCount : 0;
-        let avgBottleVx = bottleCount > 0 ? bottleVx / bottleCount : 0;
+        // ARCADE LOGIC: Constant smooth swimming speed to the right
+        // Completely ignores water velocity and slope penalty for frustration-free gameplay!
+        fish.vx = 1.5; 
         
-        // Spring water: gentle, resists backward flow (90% resistance)
-        let pushSpringX = avgSpringVx;
-        if (pushSpringX < 0) pushSpringX *= 0.1;
-        
-        // Bottle water: DOES NOT affect the fish at all (purely for terrain erosion)
-        
-        fish.vx += (pushSpringX * 0.15); // Pushed heavily by fast water
-        
-        // Natural forward swimming instinct while in water
-        fish.vx += 0.05; // Subtle instinct, fish is mostly carried by the powerful water
         // Float upwards slightly if deep in water
         if (fish.y > ty - 25) fish.vy -= 1.0;
         
-        // Slope gravity while in water (water slide effect)
-        let leftH = getTerrainHeight(fish.x - 10); // Wider check for smoother slope detection
-        let rightH = getTerrainHeight(fish.x + 10);
-        let slope = rightH - leftH; 
-        
-        // Drastically reduce slope penalty so the fish doesn't get blocked by small bumps easily
-        let slopePenalty = Math.max(-0.3, Math.min(0.3, slope * 0.015));
-        fish.vx -= slopePenalty; 
-        
-        // Add a tiny random wiggle to prevent perfect equilibrium (stuck state)
-        fish.vx += (Math.random() - 0.5) * 0.5;
       } else {
         // Out of water: take very slow damage (gives user lots of time)
         fish.hp -= 0.05;
