@@ -576,10 +576,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (pushX < 0) {
           pushX *= 0.1;
         }
-        fish.vx += pushX * 0.1; // Reduced force (was 0.25)
+        fish.vx += pushX * 0.15; // Moderate force
         
         // Natural forward swimming instinct while in water
-        fish.vx += 0.05; // Reduced instinct (was 0.2)
+        fish.vx += 0.15; // Moderate instinct
         // Float upwards slightly if deep in water
         if (fish.y > ty - 25) fish.vy -= 1.0;
         
@@ -588,8 +588,8 @@ document.addEventListener('DOMContentLoaded', () => {
         let rightH = getTerrainHeight(fish.x + 10);
         let slope = rightH - leftH; 
         
-        // Clamp slope penalty so a single steep pixel doesn't permanently stop the fish
-        let slopePenalty = Math.max(-1.5, Math.min(1.5, slope * 0.03));
+        // Drastically reduce slope penalty so the fish doesn't get blocked by small bumps easily
+        let slopePenalty = Math.max(-0.4, Math.min(0.4, slope * 0.015));
         fish.vx -= slopePenalty; 
         
         // Add a tiny random wiggle to prevent perfect equilibrium (stuck state)
