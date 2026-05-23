@@ -161,18 +161,19 @@ document.addEventListener('DOMContentLoaded', () => {
           sandY -= Math.sin(bumpProgress * Math.PI) * (height * 0.25);
         }
       } else if (currentStage === 1) {
-        // Stage 2: Deep rock pit, no sand in the pit, but huge sand pile before it
-        rockY = height * 0.4 + (xProgress * height * 0.3);
-        if (xProgress > 0.4 && xProgress < 0.6) {
-          let pitProgress = (xProgress - 0.4) / 0.2;
+        // Stage 2: A medium pit, requiring the user to use the dirt tool or erode a small mound
+        rockY = height * 0.45 + (xProgress * height * 0.2);
+        
+        if (xProgress > 0.4 && xProgress < 0.65) {
+          let pitProgress = (xProgress - 0.4) / 0.25;
           rockY += Math.sin(pitProgress * Math.PI) * (height * 0.15); 
         }
         sandY = rockY;
         
-        // Pile of sand before the pit for the user to erode and transport
-        if (xProgress > 0.1 && xProgress < 0.35) {
-          let pileProgress = (xProgress - 0.1) / 0.25;
-          sandY -= Math.sin(pileProgress * Math.PI) * (height * 0.35);
+        // A natural-looking small mound of sand before the pit
+        if (xProgress > 0.15 && xProgress < 0.35) {
+          let pileProgress = (xProgress - 0.15) / 0.2;
+          sandY -= Math.sin(pileProgress * Math.PI) * (height * 0.15);
         }
       } else if (currentStage === 2) {
         // Stage 3: Two targets, complex terrain
