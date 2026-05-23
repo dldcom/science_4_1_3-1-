@@ -161,73 +161,48 @@ document.addEventListener('DOMContentLoaded', () => {
           sandY -= Math.sin(bumpProgress * Math.PI) * (height * 0.25);
         }
       } else if (currentStage === 1) {
-        // Stage 2: A medium pit, requiring the user to erode the sand pile to fill the pit
-        rockY = height * 0.45 + (xProgress * height * 0.2);
-        
-        // Narrower and shallower pit
-        if (xProgress > 0.45 && xProgress < 0.6) {
-          let pitProgress = (xProgress - 0.45) / 0.15;
-          rockY += Math.sin(pitProgress * Math.PI) * (height * 0.1); 
+        // Stage 2: Tiny pit, huge sand pile right next to it
+        rockY = height * 0.5 + (xProgress * height * 0.15);
+        if (xProgress > 0.45 && xProgress < 0.55) {
+          let pitProgress = (xProgress - 0.45) / 0.1;
+          rockY += Math.sin(pitProgress * Math.PI) * (height * 0.05); 
         }
         sandY = rockY;
-        
-        // Large sand pile before the pit (volume > pit volume)
-        if (xProgress > 0.15 && xProgress < 0.35) {
-          let pileProgress = (xProgress - 0.15) / 0.2;
-          sandY -= Math.sin(pileProgress * Math.PI) * (height * 0.25);
+        if (xProgress > 0.3 && xProgress < 0.45) {
+          let pileProgress = (xProgress - 0.3) / 0.15;
+          sandY -= Math.sin(pileProgress * Math.PI) * (height * 0.2);
         }
       } else if (currentStage === 2) {
-        // Stage 3: Two targets, complex terrain
-        rockY = height * 0.4 + (xProgress * height * 0.4);
-        
-        // A plateau in the middle to split water
-        if (xProgress > 0.3 && xProgress < 0.6) {
-          let platProgress = (xProgress - 0.3) / 0.3;
-          rockY -= Math.sin(platProgress * Math.PI) * (height * 0.15);
-        }
+        // Stage 3: A huge sand wall that must be eroded
+        rockY = height * 0.5 + (xProgress * height * 0.2);
         sandY = rockY;
-
-        // Sand block preventing water from taking one path
-        if (xProgress > 0.25 && xProgress < 0.45) {
-          let blockProgress = (xProgress - 0.25) / 0.2;
-          sandY -= Math.sin(blockProgress * Math.PI) * (height * 0.2);
+        if (xProgress > 0.3 && xProgress < 0.6) {
+          let blockProgress = (xProgress - 0.3) / 0.3;
+          sandY -= Math.sin(blockProgress * Math.PI) * (height * 0.3);
         }
       } else if (currentStage === 3) {
-        // Stage 4: Double pit, requires plenty of sand
-        rockY = height * 0.4 + (xProgress * height * 0.2);
-        
-        // Pit 1
-        if (xProgress > 0.3 && xProgress < 0.45) {
-          let pit1 = (xProgress - 0.3) / 0.15;
-          rockY += Math.sin(pit1 * Math.PI) * (height * 0.15);
-        }
-        // Pit 2
-        if (xProgress > 0.55 && xProgress < 0.7) {
-          let pit2 = (xProgress - 0.55) / 0.15;
-          rockY += Math.sin(pit2 * Math.PI) * (height * 0.15);
+        // Stage 4: Single easy pit instead of double
+        rockY = height * 0.45 + (xProgress * height * 0.1);
+        if (xProgress > 0.4 && xProgress < 0.5) {
+          let pit1 = (xProgress - 0.4) / 0.1;
+          rockY += Math.sin(pit1 * Math.PI) * (height * 0.1);
         }
         sandY = rockY;
-        
-        // Massive sand pile before pit 1
-        if (xProgress > 0.1 && xProgress < 0.3) {
-          let pile1 = (xProgress - 0.1) / 0.2;
-          sandY -= Math.sin(pile1 * Math.PI) * (height * 0.4);
+        if (xProgress > 0.2 && xProgress < 0.4) {
+          let pile1 = (xProgress - 0.2) / 0.2;
+          sandY -= Math.sin(pile1 * Math.PI) * (height * 0.2);
         }
       } else if (currentStage === 4) {
-        // Stage 5: A deep canyon
-        rockY = height * 0.4 + (xProgress * height * 0.1);
-        
-        // Medium Canyon
-        if (xProgress > 0.35 && xProgress < 0.65) {
-          let canyon = (xProgress - 0.35) / 0.3;
-          rockY += Math.sin(canyon * Math.PI) * (height * 0.25); 
+        // Stage 5: Shallow canyon
+        rockY = height * 0.45 + (xProgress * height * 0.05);
+        if (xProgress > 0.4 && xProgress < 0.6) {
+          let canyon = (xProgress - 0.4) / 0.2;
+          rockY += Math.sin(canyon * Math.PI) * (height * 0.15); 
         }
         sandY = rockY;
-        
-        // ENORMOUS sand pile
-        if (xProgress > 0.05 && xProgress < 0.35) {
-          let supply = (xProgress - 0.05) / 0.3;
-          sandY -= Math.sin(supply * Math.PI) * (height * 0.45);
+        if (xProgress > 0.15 && xProgress < 0.4) {
+          let supply = (xProgress - 0.15) / 0.25;
+          sandY -= Math.sin(supply * Math.PI) * (height * 0.3);
         }
       }
       
@@ -268,7 +243,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Setup Springs and Fish
     if (!isSimulationMode) {
       springs.push({ x: width * 0.05, y: height * 0.2 });
-      fish = { x: width * 0.15, y: getTerrainHeight(width * 0.15) - 20, vx: 0, vy: 0, hp: 100, maxHp: 100 };
+      fish = { x: width * 0.15, y: getTerrainHeight(width * 0.15) - 20, vx: 0, vy: 0, hp: 200, maxHp: 200 };
     }
     
     particles = [];
@@ -570,9 +545,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
       
-      if (waterCount > 3) {
+      if (waterCount > 0) { // Require only 1 water particle to swim
         // In water: heal and get pushed by flow
-        fish.hp = Math.min(fish.maxHp, fish.hp + 0.2);
+        fish.hp = Math.min(fish.maxHp, fish.hp + 0.5); // Heal faster
         
         let avgSpringVx = springCount > 0 ? springVx / springCount : 0;
         let avgBottleVx = bottleCount > 0 ? bottleVx / bottleCount : 0;
@@ -583,10 +558,10 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Bottle water: DOES NOT affect the fish at all (purely for terrain erosion)
         
-        fish.vx += (pushSpringX * 0.15);
+        fish.vx += (pushSpringX * 0.25); // Increased spring push
         
         // Natural forward swimming instinct while in water
-        fish.vx += 0.15; // Moderate instinct
+        fish.vx += 0.25; // High instinct to easily overcome small bumps
         // Float upwards slightly if deep in water
         if (fish.y > ty - 25) fish.vy -= 1.0;
         
@@ -596,14 +571,14 @@ document.addEventListener('DOMContentLoaded', () => {
         let slope = rightH - leftH; 
         
         // Drastically reduce slope penalty so the fish doesn't get blocked by small bumps easily
-        let slopePenalty = Math.max(-0.4, Math.min(0.4, slope * 0.015));
+        let slopePenalty = Math.max(-0.3, Math.min(0.3, slope * 0.015));
         fish.vx -= slopePenalty; 
         
         // Add a tiny random wiggle to prevent perfect equilibrium (stuck state)
         fish.vx += (Math.random() - 0.5) * 0.5;
       } else {
-        // Out of water: take damage
-        fish.hp -= 0.15;
+        // Out of water: take very slow damage (gives user lots of time)
+        fish.hp -= 0.05;
         
         // Stranded flop animation
         if (Math.random() < 0.05) {
