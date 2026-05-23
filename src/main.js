@@ -33,6 +33,8 @@ document.addEventListener('DOMContentLoaded', () => {
   let particles = [];
   let springs = [];
   let platforms = [];
+  let jumpPads = [];
+  let monsters = [];
   let effects = []; // For floating markers
   
   let isRunning = true;
@@ -78,11 +80,15 @@ document.addEventListener('DOMContentLoaded', () => {
         s.y *= scaleY;
       }
       
-      // Proportional scale of platforms
+      // Proportional scale of platforms, jumpPads, monsters
       for (let p of platforms) {
-        p.x *= scaleX;
-        p.w *= scaleX;
-        p.y *= scaleY;
+        p.x *= scaleX; p.w *= scaleX; p.y *= scaleY;
+      }
+      for (let pad of jumpPads) {
+        pad.x *= scaleX; pad.w *= scaleX; pad.y *= scaleY; pad.h *= scaleY;
+      }
+      for (let m of monsters) {
+        m.x *= scaleX; m.w *= scaleX; m.y *= scaleY; m.h *= scaleY;
       }
       
       // Proportional scale of active water/dirt particles
@@ -123,6 +129,8 @@ document.addEventListener('DOMContentLoaded', () => {
     fish = null;
     springs = [];
     platforms = [];
+    jumpPads = [];
+    monsters = [];
     stageCleared = false;
     
     // Hide modal if open
@@ -193,32 +201,57 @@ document.addEventListener('DOMContentLoaded', () => {
           sandY -= Math.sin(blockProgress * Math.PI) * (height * 0.3);
         }
       } else if (currentStage === 3) {
-        // Stage 4: 2nd Floor Platform Puzzle
-        platforms.push({ x: width * 0.1, w: width * 0.45, y: height * 0.4, h: 20 });
-        rockY = height * 0.75; // Flat ground floor
+        // Stage 4: Hidden Jump Pad (발굴 기믹)
+        rockY = height * 0.8; // Deep ground floor
         sandY = rockY;
         
-        // Huge sand pile at ground floor to catch the fish
-        if (xProgress > 0.4 && xProgress < 0.6) {
-          let pileProg = (xProgress - 0.4) / 0.2;
-          sandY -= Math.sin(pileProg * Math.PI) * (height * 0.35);
+        // Massive sand hill burying the jump pad
+        if (xProgress > 0.3 && xProgress < 0.7) {
+          let hillProg = (xProgress - 0.3) / 0.4;
+          sandY -= Math.sin(hillProg * Math.PI) * (height * 0.45);
         }
+        
+        // The jump pad is buried deep inside the sand hill at x=0.5
+        jumpPads.push({
+          x: width * 0.48,
+          y: height * 0.65,
+          w: width * 0.04,
+          h: 20,
+          active: false
+        });
+        
+        // Target platform is high up
+        platforms.push({ x: width * 0.8, w: width * 0.2, y: height * 0.3, h: 20 });
+        
       } else if (currentStage === 4) {
-        // Stage 5: Grand Canyon (Massive deposition puzzle)
-        rockY = height * 0.3 + (xProgress * height * 0.2);
+        // Stage 5: Monster Avalanche (생매장 기믹)
+        rockY = height * 0.55;
         
-        // Massive canyon with steep walls
-        if (xProgress > 0.45 && xProgress < 0.8) {
-          let canyonProg = (xProgress - 0.45) / 0.35;
-          rockY += Math.pow(Math.sin(canyonProg * Math.PI), 0.3) * (height * 0.45);
+        // Giant pit for the monster at x=0.8
+        if (xProgress > 0.75 && xProgress < 0.95) {
+          rockY += height * 0.35;
         }
         sandY = rockY;
         
-        // Massive sand mountain far before the canyon
-        if (xProgress > 0.15 && xProgress < 0.4) {
-          let mountainProg = (xProgress - 0.15) / 0.25;
-          sandY -= Math.sin(mountainProg * Math.PI) * (height * 0.45);
+        // Dirt wall holding the lake at 0.35
+        if (xProgress > 0.33 && xProgress < 0.37) {
+          sandY -= height * 0.3;
         }
+        
+        // Huge sand mountain to be washed away at 0.55
+        if (xProgress > 0.45 && xProgress < 0.65) {
+          let mtProg = (xProgress - 0.45) / 0.2;
+          sandY -= Math.sin(mtProg * Math.PI) * (height * 0.4);
+        }
+        
+        // Monster at the bottom of the pit
+        monsters.push({
+          x: width * 0.82,
+          y: height * 0.9 - 60,
+          w: 60,
+          h: 60,
+          buried: false
+        });
       }
       
       rockY += (Math.random() - 0.5) * 5; // Noise
@@ -257,9 +290,24 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Setup Springs and Fish
     if (!isSimulationMode) {
-      if (currentStage === 3 && platforms.length > 0) {
-        springs.push({ x: width * 0.15, y: platforms[0].y - 20 });
-        fish = { x: width * 0.25, y: platforms[0].y - 30, vx: 0, vy: 0, hp: 200, maxHp: 200 };
+      if (currentStage === 3) {
+        // Stage 4
+        springs.push({ x: width * 0.05, y: height * 0.4 });
+        fish = { x: width * 0.15, y: getTerrainHeight(width * 0.15) - 20, vx: 0, vy: 0, hp: 200, maxHp: 200 };
+      } else if (currentStage === 4) {
+        // Stage 5: Lake and Fish
+        springs.push({ x: width * 0.05, y: height * 0.3 });
+        fish = { x: width * 0.1, y: getTerrainHeight(width * 0.1) - 20, vx: 0, vy: 0, hp: 200, maxHp: 200 };
+        // Spawn massive lake
+        for(let i=0; i<400; i++) {
+          particles.push({
+             x: width * 0.15 + Math.random() * width * 0.15,
+             y: height * 0.5 - Math.random() * 100,
+             vx: 0, vy: 0,
+             source: 'lake',
+             soilLoad: 0
+          });
+        }
       } else {
         springs.push({ x: width * 0.05, y: height * 0.2 });
         fish = { x: width * 0.15, y: getTerrainHeight(width * 0.15) - 20, vx: 0, vy: 0, hp: 200, maxHp: 200 };
@@ -494,6 +542,13 @@ document.addEventListener('DOMContentLoaded', () => {
           // Splash! Convert vertical energy to horizontal to blast dirt out of craters
           p.vx += (Math.random() - 0.5) * p.vy * 1.5;
         }
+        
+        // Horizontal Flow Erosion (Avalanche power)
+        if (Math.abs(p.vx) > 3.0 && p.soilLoad < 1.0 && !onPlatform) {
+          let hErode = Math.min(Math.abs(p.vx) * 0.015, 0.15);
+          let actualErode = modifyTerrain(p.x, hErode);
+          p.soilLoad += actualErode;
+        }
 
         // --- Flow Physics ---
         let isUphill = (p.vx * slope < 0);
@@ -566,6 +621,39 @@ document.addEventListener('DOMContentLoaded', () => {
             break;
           }
         }
+      }
+
+      // Jump pad logic
+      for (let pad of jumpPads) {
+        let padCenterSandY = getTerrainHeight(pad.x + pad.w/2);
+        pad.active = (padCenterSandY >= pad.y); // Exposed if sand is lower or equal (higher Y)
+        
+        if (pad.active) {
+           if (fish.x + 15 >= pad.x && fish.x - 15 <= pad.x + pad.w) {
+              if (fish.y > pad.y - 15 && fish.y - fish.vy <= pad.y + 10) {
+                 fish.y = pad.y - 15;
+                 fish.vy = -22; // MASSIVE BOING!
+                 fish.vx += 3; // Boost forward
+              }
+           }
+        }
+      }
+
+      // Monster logic
+      for (let m of monsters) {
+         let mCenterSandY = getTerrainHeight(m.x + m.w/2);
+         m.buried = (mCenterSandY <= m.y + m.h * 0.3); // Buried if sand is above 30% of monster
+         
+         if (!m.buried) {
+            // Collision with fish
+            if (fish.x + 15 > m.x && fish.x - 15 < m.x + m.w) {
+               if (fish.y + 15 > m.y && fish.y - 15 < m.y + m.h) {
+                  alert("바다 괴물에게 잡아먹혔습니다! 먼저 흙더미를 깎아 생매장 시켜야 합니다.");
+                  initTerrain();
+                  return;
+               }
+            }
+         }
       }
 
       // Terrain collision
@@ -663,6 +751,44 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function draw() {
     ctx.clearRect(0, 0, width, height);
+
+    // Draw Jump Pads (Drawn BEFORE terrain so they appear buried)
+    for (let pad of jumpPads) {
+       ctx.fillStyle = pad.active ? '#00b894' : '#55efc4';
+       ctx.fillRect(pad.x, pad.y, pad.w, pad.h);
+       ctx.fillStyle = pad.active ? '#00cec9' : '#81ecec';
+       ctx.fillRect(pad.x, pad.y, pad.w, 3);
+    }
+    
+    // Draw Monsters (Drawn BEFORE terrain to be buried)
+    for (let m of monsters) {
+       if (m.buried) {
+          // Closed eyes (buried/defeated)
+          ctx.fillStyle = '#2d3436';
+          ctx.beginPath();
+          ctx.arc(m.x + m.w/2, m.y + m.h/2, m.w/2, 0, Math.PI*2);
+          ctx.fill();
+       } else {
+          // Angry red monster
+          ctx.fillStyle = '#d63031';
+          ctx.beginPath();
+          ctx.arc(m.x + m.w/2, m.y + m.h/2, m.w/2, 0, Math.PI*2);
+          ctx.fill();
+          // Scary Teeth
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.moveTo(m.x + 10, m.y + 20);
+          ctx.lineTo(m.x + 30, m.y + 40);
+          ctx.lineTo(m.x + 50, m.y + 20);
+          ctx.fill();
+          // Angry eyes
+          ctx.fillStyle = '#000000';
+          ctx.beginPath();
+          ctx.arc(m.x + 20, m.y + 15, 4, 0, Math.PI*2);
+          ctx.arc(m.x + 40, m.y + 15, 4, 0, Math.PI*2);
+          ctx.fill();
+       }
+    }
 
     // Draw Sand Layer
     ctx.beginPath();
