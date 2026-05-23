@@ -161,19 +161,20 @@ document.addEventListener('DOMContentLoaded', () => {
           sandY -= Math.sin(bumpProgress * Math.PI) * (height * 0.25);
         }
       } else if (currentStage === 1) {
-        // Stage 2: A medium pit, requiring the user to use the dirt tool or erode a small mound
+        // Stage 2: A medium pit, requiring the user to erode the sand pile to fill the pit
         rockY = height * 0.45 + (xProgress * height * 0.2);
         
-        if (xProgress > 0.4 && xProgress < 0.65) {
-          let pitProgress = (xProgress - 0.4) / 0.25;
-          rockY += Math.sin(pitProgress * Math.PI) * (height * 0.15); 
+        // Narrower and shallower pit
+        if (xProgress > 0.45 && xProgress < 0.6) {
+          let pitProgress = (xProgress - 0.45) / 0.15;
+          rockY += Math.sin(pitProgress * Math.PI) * (height * 0.1); 
         }
         sandY = rockY;
         
-        // A natural-looking small mound of sand before the pit
+        // Large sand pile before the pit (volume > pit volume)
         if (xProgress > 0.15 && xProgress < 0.35) {
           let pileProgress = (xProgress - 0.15) / 0.2;
-          sandY -= Math.sin(pileProgress * Math.PI) * (height * 0.15);
+          sandY -= Math.sin(pileProgress * Math.PI) * (height * 0.25);
         }
       } else if (currentStage === 2) {
         // Stage 3: Two targets, complex terrain
@@ -192,41 +193,41 @@ document.addEventListener('DOMContentLoaded', () => {
           sandY -= Math.sin(blockProgress * Math.PI) * (height * 0.2);
         }
       } else if (currentStage === 3) {
-        // Stage 4: Double pit (W-shape bedrock)
+        // Stage 4: Double pit, requires plenty of sand
         rockY = height * 0.4 + (xProgress * height * 0.2);
         
         // Pit 1
-        if (xProgress > 0.2 && xProgress < 0.4) {
-          let pit1 = (xProgress - 0.2) / 0.2;
-          rockY += Math.sin(pit1 * Math.PI) * (height * 0.25);
+        if (xProgress > 0.3 && xProgress < 0.45) {
+          let pit1 = (xProgress - 0.3) / 0.15;
+          rockY += Math.sin(pit1 * Math.PI) * (height * 0.15);
         }
         // Pit 2
-        if (xProgress > 0.6 && xProgress < 0.8) {
-          let pit2 = (xProgress - 0.6) / 0.2;
-          rockY += Math.sin(pit2 * Math.PI) * (height * 0.25);
+        if (xProgress > 0.55 && xProgress < 0.7) {
+          let pit2 = (xProgress - 0.55) / 0.15;
+          rockY += Math.sin(pit2 * Math.PI) * (height * 0.15);
         }
         sandY = rockY;
         
-        // Massive sand wall before pit 1
-        if (xProgress > 0.1 && xProgress < 0.2) {
-          let pile1 = (xProgress - 0.1) / 0.1;
-          sandY -= Math.sin(pile1 * Math.PI) * (height * 0.25);
+        // Massive sand pile before pit 1
+        if (xProgress > 0.1 && xProgress < 0.3) {
+          let pile1 = (xProgress - 0.1) / 0.2;
+          sandY -= Math.sin(pile1 * Math.PI) * (height * 0.4);
         }
       } else if (currentStage === 4) {
-        // Stage 5: A very deep canyon that requires massive deposition to cross
-        rockY = height * 0.3 + (xProgress * height * 0.2);
+        // Stage 5: A deep canyon
+        rockY = height * 0.4 + (xProgress * height * 0.1);
         
-        // Very deep and wide canyon
-        if (xProgress > 0.3 && xProgress < 0.7) {
-          let canyon = (xProgress - 0.3) / 0.4;
-          rockY += Math.sin(canyon * Math.PI) * (height * 0.4); 
+        // Medium Canyon
+        if (xProgress > 0.35 && xProgress < 0.65) {
+          let canyon = (xProgress - 0.35) / 0.3;
+          rockY += Math.sin(canyon * Math.PI) * (height * 0.25); 
         }
         sandY = rockY;
         
-        // Lots of sand available at the start to push into the canyon
-        if (xProgress > 0.1 && xProgress < 0.3) {
-          let supply = (xProgress - 0.1) / 0.2;
-          sandY -= Math.sin(supply * Math.PI) * (height * 0.3);
+        // ENORMOUS sand pile
+        if (xProgress > 0.05 && xProgress < 0.35) {
+          let supply = (xProgress - 0.05) / 0.3;
+          sandY -= Math.sin(supply * Math.PI) * (height * 0.45);
         }
       }
       
