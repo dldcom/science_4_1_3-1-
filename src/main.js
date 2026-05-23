@@ -525,9 +525,11 @@ document.addEventListener('DOMContentLoaded', () => {
         fish.vy = 0;
       }
       
-      // Check water depth
+      // Check water depth (only react to spring water!)
       let waterCount = 0;
       for (let p of particles) {
+        if (p.source !== 'spring') continue; // Ignore user poured water completely
+        
         let dx = p.x - fish.x;
         let dy = p.y - fish.y;
         if (dx*dx + dy*dy < 1600) { // radius 40
