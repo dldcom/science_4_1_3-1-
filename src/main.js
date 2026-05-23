@@ -151,58 +151,37 @@ document.addEventListener('DOMContentLoaded', () => {
           sandY -= (baseHill + noise);
         }
       } else if (currentStage === 0) {
-        // Stage 1: Gentle rock slope, blocked by sand
-        rockY = height * 0.5 + (xProgress * height * 0.3);
-        sandY = rockY; 
-        
-        // A huge pile of sand blocking the way
+        // Stage 1: Steeper base slope
+        rockY = height * 0.4 + (xProgress * height * 0.35);
         if (xProgress > 0.4 && xProgress < 0.6) {
-          let bumpProgress = (xProgress - 0.4) / 0.2; 
+          let bumpProgress = (xProgress - 0.4) / 0.2;
+          rockY -= Math.sin(bumpProgress * Math.PI) * (height * 0.1); 
+        }
+        sandY = rockY;
+        if (xProgress > 0.15 && xProgress < 0.3) {
+          let bumpProgress = (xProgress - 0.15) / 0.15;
           sandY -= Math.sin(bumpProgress * Math.PI) * (height * 0.25);
         }
       } else if (currentStage === 1) {
-        // Stage 2: Tiny pit, huge sand pile right next to it
-        rockY = height * 0.5 + (xProgress * height * 0.15);
-        if (xProgress > 0.45 && xProgress < 0.55) {
-          let pitProgress = (xProgress - 0.45) / 0.1;
-          rockY += Math.sin(pitProgress * Math.PI) * (height * 0.05); 
+        // Stage 2: Steeper base slope, medium pit
+        rockY = height * 0.4 + (xProgress * height * 0.3);
+        if (xProgress > 0.45 && xProgress < 0.65) {
+          let pitProgress = (xProgress - 0.45) / 0.2;
+          rockY += Math.sin(pitProgress * Math.PI) * (height * 0.15); // Deeper and wider pit
         }
         sandY = rockY;
-        if (xProgress > 0.3 && xProgress < 0.45) {
-          let pileProgress = (xProgress - 0.3) / 0.15;
-          sandY -= Math.sin(pileProgress * Math.PI) * (height * 0.2);
+        // Big sand pile to easily fill the pit
+        if (xProgress > 0.25 && xProgress < 0.45) {
+          let pileProgress = (xProgress - 0.25) / 0.2;
+          sandY -= Math.sin(pileProgress * Math.PI) * (height * 0.3);
         }
       } else if (currentStage === 2) {
-        // Stage 3: A huge sand wall that must be eroded
-        rockY = height * 0.5 + (xProgress * height * 0.2);
+        // Stage 3: Very steep slope, huge sand wall
+        rockY = height * 0.3 + (xProgress * height * 0.5); // Steepest base
         sandY = rockY;
         if (xProgress > 0.3 && xProgress < 0.6) {
           let blockProgress = (xProgress - 0.3) / 0.3;
           sandY -= Math.sin(blockProgress * Math.PI) * (height * 0.3);
-        }
-      } else if (currentStage === 3) {
-        // Stage 4: Single easy pit instead of double
-        rockY = height * 0.45 + (xProgress * height * 0.1);
-        if (xProgress > 0.4 && xProgress < 0.5) {
-          let pit1 = (xProgress - 0.4) / 0.1;
-          rockY += Math.sin(pit1 * Math.PI) * (height * 0.1);
-        }
-        sandY = rockY;
-        if (xProgress > 0.2 && xProgress < 0.4) {
-          let pile1 = (xProgress - 0.2) / 0.2;
-          sandY -= Math.sin(pile1 * Math.PI) * (height * 0.2);
-        }
-      } else if (currentStage === 4) {
-        // Stage 5: Shallow canyon
-        rockY = height * 0.45 + (xProgress * height * 0.05);
-        if (xProgress > 0.4 && xProgress < 0.6) {
-          let canyon = (xProgress - 0.4) / 0.2;
-          rockY += Math.sin(canyon * Math.PI) * (height * 0.15); 
-        }
-        sandY = rockY;
-        if (xProgress > 0.15 && xProgress < 0.4) {
-          let supply = (xProgress - 0.15) / 0.25;
-          sandY -= Math.sin(supply * Math.PI) * (height * 0.3);
         }
       }
       
@@ -857,7 +836,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('btn-next-stage').addEventListener('click', () => {
     currentStage++;
-    if (currentStage > 4) {
+    if (currentStage > 2) {
       currentStage = 0; // Loop back to start
       alert("축하합니다! 모든 스테이지를 클리어했습니다! 🌸 처음부터 다시 시작합니다.");
     }
@@ -872,7 +851,7 @@ document.addEventListener('DOMContentLoaded', () => {
     btnTestNext.addEventListener('click', () => {
       if (!isSimulationMode) {
         currentStage++;
-        if (currentStage > 4) {
+        if (currentStage > 2) {
           currentStage = 0;
         }
         stageBadge.textContent = `Stage ${currentStage + 1}`;
