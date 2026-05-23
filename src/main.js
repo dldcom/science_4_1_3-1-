@@ -550,33 +550,41 @@ document.addEventListener('DOMContentLoaded', () => {
         fish.vy = 0;
       }
       
-      // Check water depth
+      // Check water depth and separate water sources
       let waterCount = 0;
-      let avgWaterVx = 0;
-      let avgWaterVy = 0;
+      let springVx = 0, springCount = 0;
+      let bottleVx = 0, bottleCount = 0;
+      
       for (let p of particles) {
         let dx = p.x - fish.x;
         let dy = p.y - fish.y;
         if (dx*dx + dy*dy < 1600) { // radius 40
           waterCount++;
-          avgWaterVx += p.vx;
-          avgWaterVy += p.vy;
+          if (p.source === 'bottle') {
+            bottleVx += p.vx;
+            bottleCount++;
+          } else {
+            springVx += p.vx;
+            springCount++;
+          }
         }
       }
       
       if (waterCount > 3) {
         // In water: heal and get pushed by flow
         fish.hp = Math.min(fish.maxHp, fish.hp + 0.2);
-        avgWaterVx /= waterCount;
-        avgWaterVy /= waterCount;
         
-        // Push fish along with water
-        // If water flows backwards (splash/bounce), fish resists it (90% resistance)
-        let pushX = avgWaterVx;
-        if (pushX < 0) {
-          pushX *= 0.1;
-        }
-        fish.vx += pushX * 0.15; // Moderate force
+        let avgSpringVx = springCount > 0 ? springVx / springCount : 0;
+        let avgBottleVx = bottleCount > 0 ? bottleVx / bottleCount : 0;
+        
+        // Spring water: gentle, resists backward flow (90% resistance)
+        let pushSpringX = avgSpringVx;
+        if (pushSpringX < 0) pushSpringX *= 0.1;
+        
+        // Bottle water: fully pushes the fish in any direction (very strong)
+        let pushBottleX = avgBottleVx;
+        
+        fish.vx += (pushSpringX * 0.15) + (pushBottleX * 0.4);
         
         // Natural forward swimming instinct while in water
         fish.vx += 0.15; // Moderate instinct
