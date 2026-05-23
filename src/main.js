@@ -163,16 +163,16 @@ document.addEventListener('DOMContentLoaded', () => {
       } else if (currentStage === 1) {
         // Stage 2: Deep rock pit, no sand in the pit, but huge sand pile before it
         rockY = height * 0.4 + (xProgress * height * 0.3);
-        if (xProgress > 0.4 && xProgress < 0.7) {
-          let pitProgress = (xProgress - 0.4) / 0.3;
-          rockY += Math.sin(pitProgress * Math.PI) * (height * 0.2); 
+        if (xProgress > 0.4 && xProgress < 0.6) {
+          let pitProgress = (xProgress - 0.4) / 0.2;
+          rockY += Math.sin(pitProgress * Math.PI) * (height * 0.15); 
         }
         sandY = rockY;
         
         // Pile of sand before the pit for the user to erode and transport
-        if (xProgress > 0.15 && xProgress < 0.35) {
-          let pileProgress = (xProgress - 0.15) / 0.2;
-          sandY -= Math.sin(pileProgress * Math.PI) * (height * 0.25);
+        if (xProgress > 0.1 && xProgress < 0.35) {
+          let pileProgress = (xProgress - 0.1) / 0.25;
+          sandY -= Math.sin(pileProgress * Math.PI) * (height * 0.35);
         }
       } else if (currentStage === 2) {
         // Stage 3: Two targets, complex terrain
@@ -896,6 +896,22 @@ document.addEventListener('DOMContentLoaded', () => {
     isPouring = false;
     document.getElementById('victory-modal').classList.add('hidden');
   });
+
+  const btnTestNext = document.getElementById('btn-test-next');
+  if (btnTestNext) {
+    btnTestNext.addEventListener('click', () => {
+      if (!isSimulationMode) {
+        currentStage++;
+        if (currentStage > 4) {
+          currentStage = 0;
+        }
+        stageBadge.textContent = `Stage ${currentStage + 1}`;
+        initTerrain();
+        isPouring = false;
+        document.getElementById('victory-modal').classList.add('hidden');
+      }
+    });
+  }
 
   // --- Mobile Drawer Toggle Events ---
   const btnToggleControls = document.getElementById('btn-toggle-controls');
