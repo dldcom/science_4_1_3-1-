@@ -190,6 +190,43 @@ document.addEventListener('DOMContentLoaded', () => {
           let blockProgress = (xProgress - 0.25) / 0.2;
           sandY -= Math.sin(blockProgress * Math.PI) * (height * 0.2);
         }
+      } else if (currentStage === 3) {
+        // Stage 4: Double pit (W-shape bedrock)
+        rockY = height * 0.4 + (xProgress * height * 0.2);
+        
+        // Pit 1
+        if (xProgress > 0.2 && xProgress < 0.4) {
+          let pit1 = (xProgress - 0.2) / 0.2;
+          rockY += Math.sin(pit1 * Math.PI) * (height * 0.25);
+        }
+        // Pit 2
+        if (xProgress > 0.6 && xProgress < 0.8) {
+          let pit2 = (xProgress - 0.6) / 0.2;
+          rockY += Math.sin(pit2 * Math.PI) * (height * 0.25);
+        }
+        sandY = rockY;
+        
+        // Massive sand wall before pit 1
+        if (xProgress > 0.1 && xProgress < 0.2) {
+          let pile1 = (xProgress - 0.1) / 0.1;
+          sandY -= Math.sin(pile1 * Math.PI) * (height * 0.25);
+        }
+      } else if (currentStage === 4) {
+        // Stage 5: A very deep canyon that requires massive deposition to cross
+        rockY = height * 0.3 + (xProgress * height * 0.2);
+        
+        // Very deep and wide canyon
+        if (xProgress > 0.3 && xProgress < 0.7) {
+          let canyon = (xProgress - 0.3) / 0.4;
+          rockY += Math.sin(canyon * Math.PI) * (height * 0.4); 
+        }
+        sandY = rockY;
+        
+        // Lots of sand available at the start to push into the canyon
+        if (xProgress > 0.1 && xProgress < 0.3) {
+          let supply = (xProgress - 0.1) / 0.2;
+          sandY -= Math.sin(supply * Math.PI) * (height * 0.3);
+        }
       }
       
       rockY += (Math.random() - 0.5) * 5; // Noise
@@ -228,16 +265,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Setup Springs and Fish
     if (!isSimulationMode) {
-      if (currentStage === 0) {
-        springs.push({ x: width * 0.1, y: height * 0.2 });
-        fish = { x: width * 0.15, y: getTerrainHeight(width * 0.15) - 20, vx: 0, vy: 0, hp: 100, maxHp: 100 };
-      } else if (currentStage === 1) {
-        springs.push({ x: width * 0.1, y: height * 0.2 });
-        fish = { x: width * 0.15, y: getTerrainHeight(width * 0.15) - 20, vx: 0, vy: 0, hp: 100, maxHp: 100 };
-      } else if (currentStage === 2) {
-        springs.push({ x: width * 0.1, y: height * 0.2 });
-        fish = { x: width * 0.15, y: getTerrainHeight(width * 0.15) - 20, vx: 0, vy: 0, hp: 100, maxHp: 100 };
-      }
+      springs.push({ x: width * 0.1, y: height * 0.2 });
+      fish = { x: width * 0.15, y: getTerrainHeight(width * 0.15) - 20, vx: 0, vy: 0, hp: 100, maxHp: 100 };
     }
     
     particles = [];
@@ -858,7 +887,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('btn-next-stage').addEventListener('click', () => {
     currentStage++;
-    if (currentStage > 2) {
+    if (currentStage > 4) {
       currentStage = 0; // Loop back to start
       alert("축하합니다! 모든 스테이지를 클리어했습니다! 🌸 처음부터 다시 시작합니다.");
     }
