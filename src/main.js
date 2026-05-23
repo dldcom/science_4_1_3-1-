@@ -576,10 +576,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (pushX < 0) {
           pushX *= 0.1;
         }
-        fish.vx += pushX * 0.25;
+        fish.vx += pushX * 0.1; // Reduced force (was 0.25)
         
         // Natural forward swimming instinct while in water
-        fish.vx += 0.2;
+        fish.vx += 0.05; // Reduced instinct (was 0.2)
         // Float upwards slightly if deep in water
         if (fish.y > ty - 25) fish.vy -= 1.0;
         
