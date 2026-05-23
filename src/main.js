@@ -293,11 +293,11 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Springs spawn fewer particles per frame, but constantly
     for (let s of springs) {
-      for(let i=0; i<3; i++) {
+      for(let i=0; i<5; i++) { // Increased water volume
         particles.push({
           x: s.x + (Math.random() * 10 - 5),
           y: s.y + (Math.random() * 10 - 5),
-          vx: 1.5 + (Math.random() * 1.5), // Flow slightly to the right
+          vx: 4.0 + (Math.random() * 2.0), // Very powerful and fast flow to the right
           vy: 2 + (Math.random() * 1),
           soilLoad: 0,
           life: 2500, // Spring water lasts very long so it can reach the end
@@ -558,10 +558,10 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Bottle water: DOES NOT affect the fish at all (purely for terrain erosion)
         
-        fish.vx += (pushSpringX * 0.25); // Increased spring push
+        fish.vx += (pushSpringX * 0.15); // Pushed heavily by fast water
         
         // Natural forward swimming instinct while in water
-        fish.vx += 0.25; // High instinct to easily overcome small bumps
+        fish.vx += 0.05; // Subtle instinct, fish is mostly carried by the powerful water
         // Float upwards slightly if deep in water
         if (fish.y > ty - 25) fish.vy -= 1.0;
         
