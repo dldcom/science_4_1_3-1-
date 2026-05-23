@@ -581,10 +581,9 @@ document.addEventListener('DOMContentLoaded', () => {
         let pushSpringX = avgSpringVx;
         if (pushSpringX < 0) pushSpringX *= 0.1;
         
-        // Bottle water: fully pushes the fish in any direction (very strong)
-        let pushBottleX = avgBottleVx;
+        // Bottle water: DOES NOT affect the fish at all (purely for terrain erosion)
         
-        fish.vx += (pushSpringX * 0.15) + (pushBottleX * 0.4);
+        fish.vx += (pushSpringX * 0.15);
         
         // Natural forward swimming instinct while in water
         fish.vx += 0.15; // Moderate instinct
