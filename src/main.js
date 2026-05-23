@@ -31,6 +31,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const numPoints = 200; // Resolution of the terrain
   let terrain = [];
   let particles = [];
+  let springs = [];
+  let platforms = [];
   let effects = []; // For floating markers
   
   let isRunning = true;
@@ -76,6 +78,13 @@ document.addEventListener('DOMContentLoaded', () => {
         s.y *= scaleY;
       }
       
+      // Proportional scale of platforms
+      for (let p of platforms) {
+        p.x *= scaleX;
+        p.w *= scaleX;
+        p.y *= scaleY;
+      }
+      
       // Proportional scale of active water/dirt particles
       for (let p of particles) {
         p.x *= scaleX;
@@ -103,7 +112,6 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentTool = 'water';
   let currentStage = 0;
   let fish = null; // Replaced plants with a single fish
-  let springs = [];
   let stageCleared = false;
   
   let rockTerrain = [];
@@ -114,6 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
     rockTerrain = [];
     fish = null;
     springs = [];
+    platforms = [];
     stageCleared = false;
     
     // Hide modal if open
@@ -184,22 +193,15 @@ document.addEventListener('DOMContentLoaded', () => {
           sandY -= Math.sin(blockProgress * Math.PI) * (height * 0.3);
         }
       } else if (currentStage === 3) {
-        // Stage 4: W-shape puzzle (3 pits, 3 walls)
-        rockY = height * 0.4 + (xProgress * height * 0.25);
+        // Stage 4: 2nd Floor Platform Puzzle
+        platforms.push({ x: width * 0.1, w: width * 0.45, y: height * 0.4, h: 20 });
+        rockY = height * 0.75; // Flat ground floor
         sandY = rockY;
         
-        for (let i = 0; i < 3; i++) {
-          let center = 0.3 + (i * 0.2); // Pits at 0.3, 0.5, 0.7
-          
-          if (xProgress > center - 0.05 && xProgress < center + 0.05) {
-            let pitProg = (xProgress - (center - 0.05)) / 0.1;
-            rockY += Math.sin(pitProg * Math.PI) * (height * 0.15); // Deep pit
-          }
-          
-          if (xProgress > center - 0.15 && xProgress < center - 0.02) {
-            let wallProg = (xProgress - (center - 0.15)) / 0.13;
-            sandY -= Math.sin(wallProg * Math.PI) * (height * 0.25); // Sand wall just before pit
-          }
+        // Huge sand pile at ground floor to catch the fish
+        if (xProgress > 0.4 && xProgress < 0.6) {
+          let pileProg = (xProgress - 0.4) / 0.2;
+          sandY -= Math.sin(pileProg * Math.PI) * (height * 0.35);
         }
       } else if (currentStage === 4) {
         // Stage 5: Grand Canyon (Massive deposition puzzle)
@@ -255,8 +257,13 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Setup Springs and Fish
     if (!isSimulationMode) {
-      springs.push({ x: width * 0.05, y: height * 0.2 });
-      fish = { x: width * 0.15, y: getTerrainHeight(width * 0.15) - 20, vx: 0, vy: 0, hp: 200, maxHp: 200 };
+      if (currentStage === 3 && platforms.length > 0) {
+        springs.push({ x: width * 0.15, y: platforms[0].y - 20 });
+        fish = { x: width * 0.25, y: platforms[0].y - 30, vx: 0, vy: 0, hp: 200, maxHp: 200 };
+      } else {
+        springs.push({ x: width * 0.05, y: height * 0.2 });
+        fish = { x: width * 0.15, y: getTerrainHeight(width * 0.15) - 20, vx: 0, vy: 0, hp: 200, maxHp: 200 };
+      }
     }
     
     particles = [];
@@ -432,34 +439,51 @@ document.addEventListener('DOMContentLoaded', () => {
         continue;
       }
 
+      // Platform collision
+      let onPlatform = false;
+      for (let plat of platforms) {
+        if (p.x >= plat.x && p.x <= plat.x + plat.w) {
+          if (p.y >= plat.y - 10 && p.y - p.vy <= plat.y + 10) {
+            p.y = plat.y - 2;
+            p.vy = 0;
+            onPlatform = true;
+            break;
+          }
+        }
+      }
+
       let th = getTerrainHeight(p.x);
       
-      // Collision with terrain
-      if (p.y >= th) {
-        p.y = th;
+      // Collision with terrain or platform
+      if (onPlatform || p.y >= th) {
+        if (!onPlatform) p.y = th;
 
         if (p.source === 'dirt') {
           // Dirt particles instantly deposit their soil upon hitting the ground and die
-          modifyTerrain(p.x, -p.soilLoad);
+          if (!onPlatform) modifyTerrain(p.x, -p.soilLoad);
           particles.splice(i, 1);
           continue;
         }
         
-        let idx = Math.floor((p.x / width) * numPoints);
-        if (idx < 0) idx = 0;
-        if (idx >= numPoints) idx = numPoints - 1;
-        let leftH = idx > 0 ? terrain[idx - 1] : th;
-        let rightH = idx < numPoints - 1 ? terrain[idx + 1] : th;
-        
-        // Calculate slope and clamp it to prevent crazy accelerations
-        let slope = rightH - leftH; 
-        slope = Math.max(-15, Math.min(15, slope));
+        let slope = 0;
+        if (onPlatform) {
+          slope = 0.05; // Flat platform: artificial tiny slope to keep water sliding right
+        } else {
+          let idx = Math.floor((p.x / width) * numPoints);
+          if (idx < 0) idx = 0;
+          if (idx >= numPoints) idx = numPoints - 1;
+          let leftH = idx > 0 ? terrain[idx - 1] : th;
+          let rightH = idx < numPoints - 1 ? terrain[idx + 1] : th;
+          
+          // Calculate slope and clamp it
+          slope = rightH - leftH; 
+          slope = Math.max(-15, Math.min(15, slope));
+        }
 
         let isSpring = (p.source === 'spring' || p.source === 'lake');
 
         // Impact Erosion (falling from height)
-        // Made much gentler for realistic gradual erosion
-        if (p.vy > 4) {
+        if (p.vy > 4 && !onPlatform) {
           let erodeAmount = Math.min(p.vy * p.vy * 0.0005, 0.2); 
           
           if (p.soilLoad < 1.0 && !isSpring) {
@@ -531,9 +555,22 @@ document.addEventListener('DOMContentLoaded', () => {
       // Friction
       fish.vx *= 0.9;
       
+      // Platform collision
+      let fishOnPlatform = false;
+      for (let plat of platforms) {
+        if (fish.x >= plat.x && fish.x <= plat.x + plat.w) {
+          if (fish.y > plat.y - 15 && fish.y - fish.vy <= plat.y + 10) {
+            fish.y = plat.y - 15;
+            fish.vy = 0;
+            fishOnPlatform = true;
+            break;
+          }
+        }
+      }
+
       // Terrain collision
       let ty = getTerrainHeight(fish.x);
-      if (fish.y > ty - 15) {
+      if (!fishOnPlatform && fish.y > ty - 15) {
         fish.y = ty - 15;
         fish.vy = 0;
       }
@@ -635,9 +672,24 @@ document.addEventListener('DOMContentLoaded', () => {
       ctx.lineTo(x, terrain[i]);
     }
     ctx.lineTo(width, height);
+    ctx.lineTo(0, height);
     ctx.closePath();
     ctx.fillStyle = COLOR_SOIL;
     ctx.fill();
+
+    // Draw Platforms (2nd floor structures)
+    if (platforms.length > 0) {
+      ctx.fillStyle = '#636e72'; // Dark rock
+      for (let plat of platforms) {
+        ctx.fillRect(plat.x, plat.y, plat.w, plat.h);
+        // Highlight and shadow for 3D depth
+        ctx.fillStyle = '#b2bec3';
+        ctx.fillRect(plat.x, plat.y, plat.w, 3);
+        ctx.fillStyle = '#2d3436';
+        ctx.fillRect(plat.x, plat.y + plat.h - 5, plat.w, 5);
+        ctx.fillStyle = '#636e72'; // Reset
+      }
+    }
 
     // Draw Rock Layer (Bedrock)
     ctx.beginPath();
