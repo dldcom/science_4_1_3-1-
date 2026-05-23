@@ -570,16 +570,22 @@ document.addEventListener('DOMContentLoaded', () => {
         avgWaterVx /= waterCount;
         avgWaterVy /= waterCount;
         
-        // Push fish along with water
-        fish.vx += avgWaterVx * 0.15;
+        // Push fish along with water (increased force to prevent getting stuck)
+        fish.vx += avgWaterVx * 0.25;
         // Float upwards slightly if deep in water
         if (fish.y > ty - 25) fish.vy -= 1.0;
         
         // Slope gravity while in water (water slide effect)
-        let leftH = getTerrainHeight(fish.x - 5);
-        let rightH = getTerrainHeight(fish.x + 5);
+        let leftH = getTerrainHeight(fish.x - 10); // Wider check for smoother slope detection
+        let rightH = getTerrainHeight(fish.x + 10);
         let slope = rightH - leftH; 
-        fish.vx -= slope * 0.05; 
+        
+        // Clamp slope penalty so a single steep pixel doesn't permanently stop the fish
+        let slopePenalty = Math.max(-1.5, Math.min(1.5, slope * 0.03));
+        fish.vx -= slopePenalty; 
+        
+        // Add a tiny random wiggle to prevent perfect equilibrium (stuck state)
+        fish.vx += (Math.random() - 0.5) * 0.5;
       } else {
         // Out of water: take damage
         fish.hp -= 0.15;
