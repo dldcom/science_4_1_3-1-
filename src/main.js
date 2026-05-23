@@ -183,6 +183,40 @@ document.addEventListener('DOMContentLoaded', () => {
           let blockProgress = (xProgress - 0.3) / 0.3;
           sandY -= Math.sin(blockProgress * Math.PI) * (height * 0.3);
         }
+      } else if (currentStage === 3) {
+        // Stage 4: W-shape puzzle (3 pits, 3 walls)
+        rockY = height * 0.4 + (xProgress * height * 0.25);
+        sandY = rockY;
+        
+        for (let i = 0; i < 3; i++) {
+          let center = 0.3 + (i * 0.2); // Pits at 0.3, 0.5, 0.7
+          
+          if (xProgress > center - 0.05 && xProgress < center + 0.05) {
+            let pitProg = (xProgress - (center - 0.05)) / 0.1;
+            rockY += Math.sin(pitProg * Math.PI) * (height * 0.15); // Deep pit
+          }
+          
+          if (xProgress > center - 0.15 && xProgress < center - 0.02) {
+            let wallProg = (xProgress - (center - 0.15)) / 0.13;
+            sandY -= Math.sin(wallProg * Math.PI) * (height * 0.25); // Sand wall just before pit
+          }
+        }
+      } else if (currentStage === 4) {
+        // Stage 5: Grand Canyon (Massive deposition puzzle)
+        rockY = height * 0.3 + (xProgress * height * 0.2);
+        
+        // Massive canyon with steep walls
+        if (xProgress > 0.45 && xProgress < 0.8) {
+          let canyonProg = (xProgress - 0.45) / 0.35;
+          rockY += Math.pow(Math.sin(canyonProg * Math.PI), 0.3) * (height * 0.45);
+        }
+        sandY = rockY;
+        
+        // Massive sand mountain far before the canyon
+        if (xProgress > 0.15 && xProgress < 0.4) {
+          let mountainProg = (xProgress - 0.15) / 0.25;
+          sandY -= Math.sin(mountainProg * Math.PI) * (height * 0.45);
+        }
       }
       
       rockY += (Math.random() - 0.5) * 5; // Noise
@@ -836,7 +870,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('btn-next-stage').addEventListener('click', () => {
     currentStage++;
-    if (currentStage > 2) {
+    if (currentStage > 4) {
       currentStage = 0; // Loop back to start
       alert("축하합니다! 모든 스테이지를 클리어했습니다! 🌸 처음부터 다시 시작합니다.");
     }
@@ -851,7 +885,7 @@ document.addEventListener('DOMContentLoaded', () => {
     btnTestNext.addEventListener('click', () => {
       if (!isSimulationMode) {
         currentStage++;
-        if (currentStage > 2) {
+        if (currentStage > 4) {
           currentStage = 0;
         }
         stageBadge.textContent = `Stage ${currentStage + 1}`;

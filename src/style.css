@@ -18,11 +18,14 @@
   -webkit-user-drag: none;
 }
 
-body {
+html, body {
+  width: 100%;
+  height: 100%;
   font-family: 'Nunito', 'Jua', sans-serif;
   color: var(--text-dark);
   background-color: var(--bg-color);
-  overflow: hidden; /* It's a single screen game */
+  overflow: hidden; /* Prevent all scrolling */
+  touch-action: none; /* Prevent browser swipe gestures */
 }
 
 h1, h2, h3, h4 {
@@ -31,8 +34,9 @@ h1, h2, h3, h4 {
 }
 
 #app {
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100dvh; /* Fixes mobile browser address bar pushing content down */
+  min-height: 100%;
   display: flex;
   flex-direction: column;
 }
