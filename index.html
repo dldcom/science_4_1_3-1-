@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>생명의 강 - 침식·운반·퇴적 시뮬레이션</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@700;900&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <div id="app">
+
+      <!-- ===== Main Menu Screen ===== -->
+      <div id="main-menu" class="main-menu">
+        <div class="menu-content">
+          <h1 class="menu-title">🌊 생명의 강 🌊</h1>
+          <p class="menu-subtitle">침식 · 운반 · 퇴적을 직접 체험하세요!</p>
+          <div class="menu-buttons">
+            <button id="btn-simulation" class="menu-btn simulation-btn">
+              <span class="menu-btn-icon">🔬</span>
+              <span class="menu-btn-label">시뮬레이션</span>
+              <span class="menu-btn-desc">자유롭게 물을 부어 침식·퇴적을 관찰해요</span>
+            </button>
+            <button id="btn-game" class="menu-btn game-btn">
+              <span class="menu-btn-icon">🐟</span>
+              <span class="menu-btn-label">게임 시작</span>
+              <span class="menu-btn-desc">물고기를 구출하는 퍼즐 게임에 도전!</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== Game Screen (hidden until mode selected) ===== -->
+      <div id="game-screen" class="game-screen hidden">
+
+        <!-- Top header / Mission Board -->
+        <header class="game-header">
+          <div class="mission-board">
+            <button id="btn-home" class="btn home-btn">🏠 메인</button>
+            <span class="badge" id="stage-badge">Stage 1</span>
+            <h2 id="mission-text">물고기(🐟)를 오른쪽 바다(🌊)까지 안전하게 구출하세요!</h2>
+          </div>
+        </header>
+
+        <!-- Main Game Area -->
+        <main class="game-area">
+          <div class="canvas-container">
+            <canvas id="simulation-canvas"></canvas>
+            <button id="btn-toggle-controls" class="floating-controls-btn">📋 메뉴</button>
+            
+            <div class="bottle-container" id="bottle-visual">
+              <div class="bottle">
+                 <div class="bottle-neck"></div>
+                 <div class="bottle-body">
+                   <div class="bottle-water"></div>
+                 </div>
+              </div>
+              <div class="water-spout" id="water-spout"></div>
+            </div>
+          </div>
+
+          <!-- Controls Side Panel -->
+          <aside class="controls-panel" id="controls-panel">
+            <div class="panel-header">
+              <h3 id="panel-title">실험 조작법 💧</h3>
+              <button id="btn-close-controls" class="close-panel-btn">&times;</button>
+            </div>
+            
+            <div id="tool-selector" class="tool-selector hidden">
+              <button id="tool-water" class="tool-btn active">💧 물병 (침식)</button>
+              <button id="tool-dirt" class="tool-btn">🪨 흙 (퇴적)</button>
+            </div>
+            
+            <div class="instructions-card collapsed" id="instructions-card">
+              <div id="game-instructions">
+                <h4 style="margin-top: 5px;">🐟 물고기 구출 대작전!</h4>
+                <p class="highlight-text">물고기는 오직 <strong>물살을 타고</strong> 움직입니다. 물이 없으면 체력이 줄어드니 서둘러 물길을 열어주세요!</p>
+              </div>
+            </div>
+
+            <div class="actions">
+              <button id="btn-reset" class="btn primary">다시 시작 🔄</button>
+            </div>
+
+            <div class="concept-reminder collapsed">
+              <h4>💡 과학 개념</h4>
+              <ul>
+                <li><strong>침식:</strong> 빠른 물살이 흙을 깎아냅니다.</li>
+                <li><strong>운반:</strong> 깎인 흙은 물과 함께 이동합니다.</li>
+                <li><strong>퇴적:</strong> 물살이 느려지면 흙이 바닥에 쌓입니다.</li>
+              </ul>
+            </div>
+          </aside>
+        </main>
+
+        <!-- Victory Modal -->
+        <div id="victory-modal" class="modal hidden">
+          <div class="modal-content">
+            <h2 class="victory-title">🎉 스테이지 클리어! 🎉</h2>
+            <p class="victory-desc">물고기가 바다에 무사히 도착했습니다!</p>
+            <button id="btn-next-stage" class="btn primary large-btn">다음 스테이지로 ➡️</button>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
