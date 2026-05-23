@@ -265,7 +265,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Setup Springs and Fish
     if (!isSimulationMode) {
-      springs.push({ x: width * 0.1, y: height * 0.2 });
+      springs.push({ x: width * 0.05, y: height * 0.2 });
       fish = { x: width * 0.15, y: getTerrainHeight(width * 0.15) - 20, vx: 0, vy: 0, hp: 100, maxHp: 100 };
     }
     
