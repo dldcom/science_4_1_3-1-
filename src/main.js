@@ -36,6 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let jumpPads = [];
   let monsters = [];
   let effects = []; // For floating markers
+  let portals = [];
   
   let isRunning = true;
   let isPouring = false;
@@ -43,6 +44,9 @@ document.addEventListener('DOMContentLoaded', () => {
   let bottleY = 0;
 
   // Colors
+  const COLOR_SKY = '#74b9ff';
+  
+  const MAX_PARTICLES = 600; // Reduced from 1500 to prevent severe lag
   const COLOR_SOIL = '#8b4513';
   const COLOR_SOIL_DEEP = '#6b3e1c';
   const COLOR_WATER = 'rgba(79, 195, 247, 0.6)';
@@ -131,6 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
     platforms = [];
     jumpPads = [];
     monsters = [];
+    portals = [];
     stageCleared = false;
     
     // Hide modal if open
@@ -167,118 +172,100 @@ document.addEventListener('DOMContentLoaded', () => {
           
           sandY -= (baseHill + noise);
         }
-      } else if (currentStage === 0) {
-        // Stage 1: Steeper base slope
-        rockY = height * 0.4 + (xProgress * height * 0.35);
-        if (xProgress > 0.4 && xProgress < 0.6) {
-          let bumpProgress = (xProgress - 0.4) / 0.2;
-          rockY -= Math.sin(bumpProgress * Math.PI) * (height * 0.1); 
-        }
-        sandY = rockY;
-        if (xProgress > 0.15 && xProgress < 0.3) {
-          let bumpProgress = (xProgress - 0.15) / 0.15;
-          sandY -= Math.sin(bumpProgress * Math.PI) * (height * 0.25);
-        }
-      } else if (currentStage === 1) {
-        // Stage 2: Steeper base slope, medium pit
-        rockY = height * 0.4 + (xProgress * height * 0.3);
-        if (xProgress > 0.45 && xProgress < 0.65) {
-          let pitProgress = (xProgress - 0.45) / 0.2;
-          rockY += Math.sin(pitProgress * Math.PI) * (height * 0.15); // Deeper and wider pit
-        }
-        sandY = rockY;
-        // Big sand pile to easily fill the pit
-        if (xProgress > 0.25 && xProgress < 0.45) {
-          let pileProgress = (xProgress - 0.25) / 0.2;
-          sandY -= Math.sin(pileProgress * Math.PI) * (height * 0.3);
-        }
-      } else if (currentStage === 2) {
-        // Stage 3: Very steep slope, huge sand wall
-        rockY = height * 0.3 + (xProgress * height * 0.5); // Steepest base
-        sandY = rockY;
-        if (xProgress > 0.3 && xProgress < 0.6) {
-          let blockProgress = (xProgress - 0.3) / 0.3;
-          sandY -= Math.sin(blockProgress * Math.PI) * (height * 0.3);
-        }
-      } else if (currentStage === 3) {
-        // Stage 4: Hidden Jump Pad (발굴 기믹)
-        rockY = height * 0.8; // Deep ground floor
-        sandY = rockY;
-        
-        // Massive sand hill burying the jump pad
-        if (xProgress > 0.3 && xProgress < 0.7) {
-          let hillProg = (xProgress - 0.3) / 0.4;
-          sandY -= Math.sin(hillProg * Math.PI) * (height * 0.45);
-        }
-        
-        // The jump pad is buried deep inside the sand hill at x=0.5
-        jumpPads.push({
-          x: width * 0.48,
-          y: height * 0.65,
-          w: width * 0.04,
-          h: 20,
-          active: false
-        });
-        
-        // Target platform is high up
-        platforms.push({ x: width * 0.8, w: width * 0.2, y: height * 0.3, h: 20 });
-        
-      } else if (currentStage === 4) {
-        // Stage 5: Monster Avalanche (생매장 기믹)
-        rockY = height * 0.55;
-        
-        // Giant pit for the monster at x=0.8
-        if (xProgress > 0.75 && xProgress < 0.95) {
-          rockY += height * 0.35;
+      } else {
+        if (currentStage === 0) {
+          // Stage 1 bedrock: has a huge wall (step UP) at xProgress = 0.5
+          if (xProgress < 0.5) {
+            rockY = height * 0.8;
+          } else {
+            rockY = height * 0.35 + ((xProgress - 0.5) * height * 0.8);
+          }
+        } else {
+          // All other stages have standard sloped bedrock
+          rockY = height * 0.65 + (xProgress * height * 0.22);
+          if (currentStage === 1) {
+            if ((xProgress > 0.35 && xProgress < 0.38) || (xProgress > 0.62 && xProgress < 0.65)) {
+              rockY = height + 100; // Gap for dirt to drain
+            } else if (xProgress >= 0.38 && xProgress <= 0.62) {
+              rockY = height * 0.95; // Pit bottom
+            }
+          } else if (currentStage === 2) {
+            if ((xProgress > 0.5 && xProgress < 0.53) || (xProgress > 0.72 && xProgress < 0.75)) {
+              rockY = height + 100; // Gap for dirt to drain
+            } else if (xProgress >= 0.53 && xProgress <= 0.72) {
+              rockY = height * 0.95; // Pit bottom
+            } else if (xProgress >= 0.75 && xProgress <= 0.85) {
+              rockY = height * 0.55; // Massive blocking wall
+            }
+          } else if (currentStage === 3) {
+            if (xProgress >= 0.75 && xProgress <= 0.8) {
+              rockY = height * 0.2; // Massive wall to pool water
+            } else if (xProgress > 0.8) {
+              rockY = height * 0.85; // Drop down to ocean
+            }
+          }
         }
         sandY = rockY;
         
-        // Dirt wall holding the lake at 0.35
-        if (xProgress > 0.33 && xProgress < 0.37) {
-          sandY -= height * 0.3;
+        if (currentStage === 0) {
+          // Stage 1: 1 huge hill covering the wall base and portal
+          if (xProgress > 0.3 && xProgress < 0.55) {
+            let bumpProgress = (xProgress - 0.3) / 0.25;
+            sandY = height * 0.8 - Math.sin(bumpProgress * Math.PI) * (height * 0.45);
+          }
+        } else if (currentStage === 1) {
+          // Stage 2: 1 huge central hill filling the pit and piling up
+          if (xProgress > 0.35 && xProgress < 0.65) {
+            let bumpProgress = (xProgress - 0.35) / 0.3;
+            sandY = height * 0.85 - Math.sin(bumpProgress * Math.PI) * (height * 0.2);
+          }
+        } else if (currentStage === 2) {
+          // Stage 3: Hill over portal (0.15 to 0.45), Hill over pit (0.5 to 0.75)
+          if (xProgress > 0.15 && xProgress < 0.45) {
+            let bumpProgress = (xProgress - 0.15) / 0.3;
+            sandY = rockY - Math.sin(bumpProgress * Math.PI) * (height * 0.2);
+          }
+          if (xProgress > 0.5 && xProgress < 0.75) {
+            let bumpProgress = (xProgress - 0.5) / 0.25;
+            sandY = height * 0.85 - Math.sin(bumpProgress * Math.PI) * (height * 0.2);
+          }
+        } else if (currentStage === 3) {
+          // Stage 4: Giant dirt mountain at 0.1 to 0.4
+          if (xProgress > 0.1 && xProgress < 0.4) {
+            let bumpProgress = (xProgress - 0.1) / 0.3;
+            sandY = height * 0.8 - Math.sin(bumpProgress * Math.PI) * (height * 0.5); // Giant mountain
+          }
+        } else if (currentStage === 4) {
+          // Stage 5: Final challenge: A valley at 0.2 to 0.38, and a huge hill at 0.4 to 0.75
+          if (xProgress > 0.4 && xProgress < 0.75) {
+            let bumpProgress = (xProgress - 0.4) / 0.35;
+            sandY -= Math.sin(bumpProgress * Math.PI) * (height * 0.6);
+          }
         }
-        
-        // Huge sand mountain to be washed away at 0.55
-        if (xProgress > 0.45 && xProgress < 0.65) {
-          let mtProg = (xProgress - 0.45) / 0.2;
-          sandY -= Math.sin(mtProg * Math.PI) * (height * 0.4);
-        }
-        
-        // Monster at the bottom of the pit
-        monsters.push({
-          x: width * 0.82,
-          y: height * 0.9 - 60,
-          w: 60,
-          h: 60,
-          buried: false
-        });
       }
       
-      rockY += (Math.random() - 0.5) * 5; // Noise
-      sandY += (Math.random() - 0.5) * 5; // Noise
+      rockY += (Math.random() - 0.5) * 3; // Minor Noise
+      sandY += (Math.random() - 0.5) * 3; // Minor Noise
       
       if (sandY > rockY) sandY = rockY; // Sand cannot be lower than bedrock
-
+ 
       rockTerrain.push(rockY);
       terrain.push(sandY);
     }
     
     // --- Pre-settle Terrain ---
-    // Run enough iterations so the initial shapes collapse into perfectly stable natural slopes
     for (let k = 0; k < 1000; k++) {
       for (let i = 0; i < numPoints - 1; i++) {
         let diff = terrain[i] - terrain[i + 1];
-        let maxSlope = 7.0; // Increased to 7.0 to support steeper, natural curves without crushing them into triangles
+        let maxSlope = 7.0;
         if (Math.abs(diff) > maxSlope) {
-          let transfer = (Math.abs(diff) - maxSlope) * 0.4; // Fast transfer for init
+          let transfer = (Math.abs(diff) - maxSlope) * 0.4;
           if (diff > 0) {
-            // i+1 loses dirt
             let available = rockTerrain[i+1] - terrain[i+1];
             transfer = Math.min(transfer, available);
             terrain[i] -= transfer;
             terrain[i + 1] += transfer;
           } else {
-            // i loses dirt
             let available = rockTerrain[i] - terrain[i];
             transfer = Math.min(transfer, available);
             terrain[i] += transfer;
@@ -288,28 +275,119 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
     
-    // Setup Springs and Fish
+    // Setup Springs, Portals, and Fish
     if (!isSimulationMode) {
-      if (currentStage === 3) {
-        // Stage 4
-        springs.push({ x: width * 0.05, y: height * 0.4 });
-        fish = { x: width * 0.15, y: getTerrainHeight(width * 0.15) - 20, vx: 0, vy: 0, hp: 200, maxHp: 200 };
-      } else if (currentStage === 4) {
-        // Stage 5: Lake and Fish
-        springs.push({ x: width * 0.05, y: height * 0.3 });
-        fish = { x: width * 0.1, y: getTerrainHeight(width * 0.1) - 20, vx: 0, vy: 0, hp: 200, maxHp: 200 };
-        // Spawn massive lake
-        for(let i=0; i<400; i++) {
-          particles.push({
-             x: width * 0.15 + Math.random() * width * 0.15,
-             y: height * 0.5 - Math.random() * 100,
-             vx: 0, vy: 0,
-             source: 'lake',
-             soilLoad: 0
-          });
+      springs.push({ x: width * 0.05, y: height * 0.25 });
+      
+      function getBedrockHeightAt(x) {
+        let xProg = x / width;
+        if (currentStage === 0) {
+          if (xProg < 0.5) {
+            return height * 0.8;
+          } else {
+            return height * 0.35 + ((xProg - 0.5) * height * 0.8);
+          }
         }
-      } else {
-        springs.push({ x: width * 0.05, y: height * 0.2 });
+        let y = height * 0.65 + (xProg * height * 0.22);
+        if (currentStage === 1) {
+          if ((xProg > 0.35 && xProg < 0.38) || (xProg > 0.62 && xProg < 0.65)) {
+            y = height + 100;
+          } else if (xProg >= 0.38 && xProg <= 0.62) {
+            y = height * 0.95;
+          }
+        } else if (currentStage === 2) {
+          if ((xProg > 0.5 && xProg < 0.53) || (xProg > 0.72 && xProg < 0.75)) {
+            y = height + 100;
+          } else if (xProg >= 0.53 && xProg <= 0.72) {
+            y = height * 0.95;
+          } else if (xProg >= 0.75 && xProg <= 0.85) {
+            y = height * 0.55;
+          }
+        } else if (currentStage === 3) {
+          if (xProg >= 0.75 && xProg <= 0.8) {
+            y = height * 0.2; // Massive wall
+          } else if (xProg > 0.8) {
+            y = height * 0.85; // Drop down to ocean
+          }
+        }
+        return y;
+      }
+      
+      if (currentStage === 0) {
+        // Stage 1: Blue portal buried right in front of the wall
+        portals.push({
+          inX: width * 0.48,
+          inY: getBedrockHeightAt(width * 0.48) - 15,
+          outX: width * 0.55,
+          outY: getBedrockHeightAt(width * 0.55) - 15,
+          radius: 25,
+          angle: 0,
+          active: false,
+          color: 'blue'
+        });
+        fish = { x: width * 0.15, y: getTerrainHeight(width * 0.15) - 20, vx: 0, vy: 0, hp: 200, maxHp: 200 };
+      } else if (currentStage === 1) {
+        // Stage 2: Pit with a Jump Pad
+        jumpPads.push({
+          x: width * 0.5 - 40,
+          y: height * 0.95 - 20,
+          w: 80,
+          h: 20,
+          active: false
+        });
+        fish = { x: width * 0.15, y: getTerrainHeight(width * 0.15) - 20, vx: 0, vy: 0, hp: 200, maxHp: 200 };
+      } else if (currentStage === 2) {
+        // Stage 3: Portal + Jump Pad Combo
+        portals.push({
+          inX: width * 0.3,
+          inY: height * 0.65, // Buried under first dirt hill
+          outX: width * 0.68,
+          outY: height * 0.3, // High in the sky over the pit (right side)
+          radius: 35,
+          color: 'cyan',
+          active: false
+        });
+        jumpPads.push({
+          x: width * 0.68 - 40,
+          y: height * 0.95 - 20, // Bottom of the pit, right next to the wall!
+          w: 80,
+          h: 20,
+          active: false
+        });
+        fish = { x: width * 0.1, y: getTerrainHeight(width * 0.1) - 20, vx: 0, vy: 0, hp: 200, maxHp: 200 };
+      } else if (currentStage === 3) {
+        // Stage 4: Deposition puzzle
+        portals.push({
+          inX: width * 0.72,
+          inY: height * 0.4, // Floating high up in the air!
+          outX: width * 0.85,
+          outY: height * 0.4, // Drop onto bedrock just before the ocean
+          radius: 35,
+          color: 'cyan',
+          active: false
+        });
+        fish = { x: width * 0.05, y: getTerrainHeight(width * 0.05) - 20, vx: 0, vy: 0, hp: 200, maxHp: 200 };
+      } else if (currentStage === 4) {
+        // Stage 5: Final challenge (Bridge valley + portal selection)
+        portals.push({
+          inX: width * 0.46,
+          inY: getBedrockHeightAt(width * 0.46) - 15,
+          outX: width * 0.82,
+          outY: getBedrockHeightAt(width * 0.82) - 15,
+          radius: 25,
+          angle: 0,
+          active: false,
+          color: 'blue'
+        }, {
+          inX: width * 0.62,
+          inY: getBedrockHeightAt(width * 0.62) - 15,
+          outX: width * 0.15,
+          outY: height * 0.3,
+          radius: 25,
+          angle: 0,
+          active: false,
+          color: 'purple'
+        });
         fish = { x: width * 0.15, y: getTerrainHeight(width * 0.15) - 20, vx: 0, vy: 0, hp: 200, maxHp: 200 };
       }
     }
@@ -371,6 +449,26 @@ document.addEventListener('DOMContentLoaded', () => {
           life: 2500, // Spring water lasts very long so it can reach the end
           source: 'spring'
         });
+      }
+    }
+  }
+
+  function spawnPortalWater() {
+    if (stageCleared) return;
+    
+    for (let portal of portals) {
+      if (portal.spawnsWater && portal.color !== 'purple') {
+        for (let i = 0; i < 4; i++) {
+          particles.push({
+            x: portal.outX + (Math.random() * 10 - 5),
+            y: portal.outY + (Math.random() * 10 - 5),
+            vx: 1.5 + (Math.random() * 1.5),
+            vy: 2 + (Math.random() * 1),
+            soilLoad: 0,
+            life: 2500,
+            source: 'spring'
+          });
+        }
       }
     }
   }
@@ -449,6 +547,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function update() {
     spawnWater();
     spawnSpringWater();
+    spawnPortalWater();
 
     for (let i = particles.length - 1; i >= 0; i--) {
       let p = particles[i];
@@ -456,6 +555,34 @@ document.addEventListener('DOMContentLoaded', () => {
       p.x += p.vx;
       p.y += p.vy;
       p.life--;
+
+      // Portal collision for spring water particles
+      if (p.source === 'spring' || p.source === 'lake') {
+        for (let portal of portals) {
+          if (portal.active) {
+            let dx = p.x - portal.inX;
+            let dy = p.y - portal.inY;
+            if (dx*dx + dy*dy < portal.radius * portal.radius) {
+              p.x = portal.outX + (Math.random() * 10 - 5);
+              p.y = portal.outY + (Math.random() * 10 - 5);
+              portal.spawnsWater = true;
+              if (portal.color === 'purple') {
+                p.vx = 2.0;
+                p.vy = 0;
+              } else {
+                if (currentStage === 0) {
+                  p.vx = 28.0; // Booster speed!
+                  p.vy = -1.5;
+                } else {
+                  p.vx = 10.0; // Water Cannon launch speed!
+                  p.vy = -4.0;
+                }
+              }
+              break;
+            }
+          }
+        }
+      }
 
       // Wall Collision
       if (p.x <= 0) {
@@ -544,7 +671,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         // Horizontal Flow Erosion (Avalanche power)
-        if (Math.abs(p.vx) > 3.0 && p.soilLoad < 1.0 && !onPlatform) {
+        if (Math.abs(p.vx) > 3.0 && p.soilLoad < 1.0 && !onPlatform && !isSpring) {
           let hErode = Math.min(Math.abs(p.vx) * 0.015, 0.15);
           let actualErode = modifyTerrain(p.x, hErode);
           p.soilLoad += actualErode;
@@ -579,7 +706,7 @@ document.addEventListener('DOMContentLoaded', () => {
           // 평지: 흙을 거의 안 들고 있는 맑은 물만 침식 가능
           let canErode = Math.abs(slope) > 0.5 || (p.soilLoad < 0.1 && speed > 3.0);
           if (canErode) {
-            let erodeAmount = isSimulationMode ? 0.005 : 0.02; // 시뮬레이션에서는 침식이 더 느림
+            let erodeAmount = isSimulationMode ? 0.005 : 0.06; // Increased from 0.02 to 0.06 for easier digging!
             let actualErode = modifyTerrain(p.x, erodeAmount);
             p.soilLoad += actualErode;
           }
@@ -608,7 +735,12 @@ document.addEventListener('DOMContentLoaded', () => {
       fish.y += fish.vy;
 
       // Friction
-      fish.vx *= 0.9;
+      let tyAirCheck = getTerrainHeight(fish.x);
+      if (fish.y < tyAirCheck - 20) {
+        fish.vx *= 0.99; // Aerodynamic in the air
+      } else {
+        fish.vx *= 0.9; // Friction on ground/water
+      }
       
       // Platform collision
       let fishOnPlatform = false;
@@ -626,14 +758,21 @@ document.addEventListener('DOMContentLoaded', () => {
       // Jump pad logic
       for (let pad of jumpPads) {
         let padCenterSandY = getTerrainHeight(pad.x + pad.w/2);
-        pad.active = (padCenterSandY >= pad.y); // Exposed if sand is lower or equal (higher Y)
+        pad.active = (padCenterSandY >= pad.y - 25); // Exposed if sand is below the top plate
         
         if (pad.active) {
            if (fish.x + 15 >= pad.x && fish.x - 15 <= pad.x + pad.w) {
-              if (fish.y > pad.y - 15 && fish.y - fish.vy <= pad.y + 10) {
-                 fish.y = pad.y - 15;
+              if (fish.y > pad.y - 45 && fish.y - fish.vy <= pad.y + 10) {
+                 fish.y = pad.y - 45;
                  fish.vy = -22; // MASSIVE BOING!
                  fish.vx += 3; // Boost forward
+                 if (currentStage === 1) {
+                    fish.vx = 12.5; // Halved horizontal speed
+                    fish.vy = -17.5; // Halved vertical speed
+                 } else if (currentStage === 2) {
+                    fish.vx = 8; // Small horizontal speed (since it's right next to the wall)
+                    fish.vy = -45; // INSANE vertical jump to clear the wall from point-blank range!
+                 }
               }
            }
         }
@@ -658,15 +797,73 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Terrain collision
       let ty = getTerrainHeight(fish.x);
+      
+      // Wall collision: if terrain is a steep cliff higher than fish's climb height
+      if (!fishOnPlatform && ty < fish.y - 5) {
+        // Robust push-out: step backwards until safe
+        let step = fish.vx > 0 ? -1 : 1;
+        if (Math.abs(fish.vx) < 0.1) step = -1; // Default push left if essentially stopped
+        
+        for (let k = 0; k < 20; k++) {
+           fish.x += step;
+           ty = getTerrainHeight(fish.x);
+           if (ty >= fish.y - 5) break; // Found safe ground
+        }
+        fish.vx = -fish.vx * 0.5; // Bounce back
+        ty = getTerrainHeight(fish.x); // Final safe ty
+      }
+      
       if (!fishOnPlatform && fish.y > ty - 15) {
         fish.y = ty - 15;
-        fish.vy = 0;
+        if (fish.vy > 0) fish.vy = 0;
+      }
+
+      // Portal collision for fish
+      for (let portal of portals) {
+        if (portal.active) {
+          let dx = fish.x - portal.inX;
+          let dy = fish.y - portal.inY;
+          if (dx*dx + dy*dy < (portal.radius + 15) * (portal.radius + 15)) {
+            if (portal.color === 'purple') {
+              // Trap!
+              fish.x = portal.outX;
+              fish.y = portal.outY;
+              fish.vx = 2.0;
+              fish.vy = 0;
+              fish.hp = Math.min(fish.maxHp, fish.hp + 50); // Small HP boost so they can try again
+              alert("앗! 보라색 함정 포탈을 탔습니다. 처음 지점으로 돌아갑니다! 🌀");
+            } else {
+              // Correct: Water Cannon launch!
+              fish.x = portal.outX;
+              fish.y = portal.outY;
+               if (currentStage !== 2) {
+                 portal.spawnsWater = true;
+               }
+               if (currentStage === 0) {
+                 fish.vx = 28.0; // Booster speed!
+                 fish.vy = -1.5;
+               } else if (currentStage === 2) {
+                 fish.vx = 0; // Drop straight down onto the jump pad!
+                 fish.vy = 0;
+               } else if (currentStage === 3) {
+                 fish.vx = 5.0; // Drop into ocean
+                 fish.vy = -2.0;
+               } else {
+                 fish.vx = 10.0;
+                 fish.vy = -4.0;
+               }
+            }
+            addEffect(portal.inX, portal.inY, 'transport', 1.5);
+            addEffect(portal.outX, portal.outY, 'transport', 1.5);
+            break;
+          }
+        }
       }
       
       // Check water depth (only react to spring water!)
       let waterCount = 0;
       for (let p of particles) {
-        if (p.source !== 'spring') continue; // Ignore user poured water completely
+        if (p.source !== 'spring' && p.source !== 'lake') continue; // Ignore user poured water completely
         
         let dx = p.x - fish.x;
         let dy = p.y - fish.y;
@@ -680,18 +877,20 @@ document.addEventListener('DOMContentLoaded', () => {
         fish.hp = Math.min(fish.maxHp, fish.hp + 0.5); 
         
         // ARCADE LOGIC: Constant smooth swimming speed to the right
-        // Completely ignores water velocity and slope penalty for frustration-free gameplay!
-        fish.vx = 1.5; 
+        // Only apply if the fish is moving slower than 1.5, to preserve jump/booster momentum!
+        if (fish.vx < 1.5) {
+          fish.vx = 1.5; 
+        }
         
         // Float upwards slightly if deep in water
         if (fish.y > ty - 25) fish.vy -= 1.0;
         
       } else {
         // Out of water: take very slow damage (gives user lots of time)
-        fish.hp -= 0.05;
+        fish.hp -= 0.015; // Slower HP loss (0.015 instead of 0.05) for easier gameplay!
         
-        // Stranded flop animation
-        if (Math.random() < 0.05) {
+        // Stranded flop animation (only when resting on the ground!)
+        if (fish.y >= ty - 16 && Math.random() < 0.05) {
           fish.vy = -3; // Flop up
           fish.vx = (Math.random() - 0.5) * 2;
         }
@@ -716,6 +915,13 @@ document.addEventListener('DOMContentLoaded', () => {
       e.y -= 1;
       if(e.type === 'transport') e.x += 1;
       if (e.life <= 0) effects.splice(i, 1);
+    }
+
+    // Update portal active states and rotation angles
+    for (let portal of portals) {
+      let sandY = getTerrainHeight(portal.inX);
+      portal.active = (sandY >= portal.inY); // Exposed if sand level is lower than portal (higher Y value)
+      portal.angle += 0.05;
     }
 
     // --- Thermal Erosion (Soil Slumping) ---
@@ -749,15 +955,99 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- Rendering ---
 
+  function drawPortal(context, portal, type) {
+    let px = type === 'in' ? portal.inX : portal.outX;
+    let py = type === 'in' ? portal.inY : portal.outY;
+    
+    context.save();
+    context.globalAlpha = 1.0;
+    
+    // 1. Draw Neobrutalist Offset Shadow
+    context.fillStyle = '#000000';
+    context.beginPath();
+    context.arc(px + 4, py + 4, portal.radius, 0, Math.PI * 2);
+    context.fill();
+    
+    // 2. Draw Portal Body (Color-coded)
+    let pColor = '#74b9ff'; // blue
+    let spiralColor = '#0984e3';
+    if (portal.color === 'purple') {
+      pColor = '#d6a2e8'; // purple
+      spiralColor = '#8e44ad';
+    } else if (portal.color === 'orange') {
+      pColor = '#ffbe76'; // orange
+      spiralColor = '#e67e22';
+    }
+    
+    context.fillStyle = pColor;
+    context.beginPath();
+    context.arc(px, py, portal.radius, 0, Math.PI * 2);
+    context.fill();
+    
+    // Draw thick border
+    context.strokeStyle = '#000000';
+    context.lineWidth = 3;
+    context.stroke();
+    
+    // 3. Draw rotating spiral & emoji
+    context.translate(px, py);
+    context.rotate(portal.angle);
+    
+    // Draw Vector Spiral
+    context.strokeStyle = spiralColor;
+    context.lineWidth = 3;
+    context.beginPath();
+    for (let theta = 0; theta < Math.PI * 4; theta += 0.1) {
+      let r = (theta / (Math.PI * 4)) * (portal.radius * 0.9);
+      let x = r * Math.cos(theta);
+      let y = r * Math.sin(theta);
+      if (theta === 0) context.moveTo(x, y);
+      else context.lineTo(x, y);
+    }
+    context.stroke();
+    
+    // Draw 🌀 emoji in center
+    context.font = '24px Arial';
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    context.fillText('🌀', 0, 0);
+    
+    context.restore();
+    context.globalAlpha = 1.0;
+  }
+
   function draw() {
     ctx.clearRect(0, 0, width, height);
 
     // Draw Jump Pads (Drawn BEFORE terrain so they appear buried)
     for (let pad of jumpPads) {
-       ctx.fillStyle = pad.active ? '#00b894' : '#55efc4';
-       ctx.fillRect(pad.x, pad.y, pad.w, pad.h);
-       ctx.fillStyle = pad.active ? '#00cec9' : '#81ecec';
-       ctx.fillRect(pad.x, pad.y, pad.w, 3);
+       // Base
+       ctx.fillStyle = '#2d3436';
+       ctx.fillRect(pad.x, pad.y + pad.h - 5, pad.w, 5);
+       
+       // Spring coil
+       ctx.strokeStyle = pad.active ? '#d63031' : '#b2bec3';
+       ctx.lineWidth = 4;
+       ctx.beginPath();
+       let startY = pad.y + pad.h - 5;
+       let topY = pad.y - 25; // Always fully expanded!
+       let step = (startY - topY) / 4;
+       
+       ctx.moveTo(pad.x + pad.w*0.2, startY);
+       ctx.lineTo(pad.x + pad.w*0.8, startY - step);
+       ctx.lineTo(pad.x + pad.w*0.2, startY - step*2);
+       ctx.lineTo(pad.x + pad.w*0.8, startY - step*3);
+       ctx.lineTo(pad.x + pad.w*0.2, topY);
+       ctx.stroke();
+
+       // Top plate
+       ctx.fillStyle = pad.active ? '#e84393' : '#a29bfe';
+       ctx.fillRect(pad.x, topY - 8, pad.w, 8);
+
+       // Emoji text
+       ctx.font = '24px Arial';
+       ctx.textAlign = 'center';
+       ctx.fillText('🚀', pad.x + pad.w/2, topY - 15);
     }
     
     // Draw Monsters (Drawn BEFORE terrain to be buried)
@@ -788,6 +1078,12 @@ document.addEventListener('DOMContentLoaded', () => {
           ctx.arc(m.x + 40, m.y + 15, 4, 0, Math.PI*2);
           ctx.fill();
        }
+    }
+
+    // Draw Portals (Drawn BEFORE terrain so they appear buried under the sand)
+    for (let portal of portals) {
+      drawPortal(ctx, portal, 'in');
+      drawPortal(ctx, portal, 'out');
     }
 
     // Draw Sand Layer
@@ -1012,7 +1308,7 @@ document.addEventListener('DOMContentLoaded', () => {
     isSimulationMode = false;
     currentStage = 0;
     currentTool = 'water';
-    toolSelector.classList.add('hidden');
+    toolSelector.classList.remove('hidden');
     
     mainMenu.classList.add('hidden');
     gameScreen.classList.remove('hidden');
@@ -1047,32 +1343,19 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   document.getElementById('btn-next-stage').addEventListener('click', () => {
-    currentStage++;
-    if (currentStage > 4) {
-      currentStage = 0; // Loop back to start
-      alert("축하합니다! 모든 스테이지를 클리어했습니다! 🌸 처음부터 다시 시작합니다.");
+    if (currentStage === 3) {
+      alert("축하합니다! 4개의 스테이지를 모두 클리어했습니다! 🎉 메인 메뉴로 돌아갑니다.");
+      document.getElementById('victory-modal').classList.add('hidden');
+      document.getElementById('game-screen').classList.add('hidden');
+      document.getElementById('main-menu').classList.remove('hidden');
+      return;
     }
+    currentStage++;
     stageBadge.textContent = `Stage ${currentStage + 1}`;
     initTerrain();
     isPouring = false;
     document.getElementById('victory-modal').classList.add('hidden');
   });
-
-  const btnTestNext = document.getElementById('btn-test-next');
-  if (btnTestNext) {
-    btnTestNext.addEventListener('click', () => {
-      if (!isSimulationMode) {
-        currentStage++;
-        if (currentStage > 4) {
-          currentStage = 0;
-        }
-        stageBadge.textContent = `Stage ${currentStage + 1}`;
-        initTerrain();
-        isPouring = false;
-        document.getElementById('victory-modal').classList.add('hidden');
-      }
-    });
-  }
 
   // --- Mobile Drawer Toggle Events ---
   const btnToggleControls = document.getElementById('btn-toggle-controls');
